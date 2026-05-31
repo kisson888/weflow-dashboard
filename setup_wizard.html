@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WeFlow 看板 · 安装向导</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+body{background:linear-gradient(135deg,#1e3a5f,#0d2137);min-height:100vh;display:flex;align-items:center;justify-content:center}
+.card{background:rgba(255,255,255,.08);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.12);border-radius:24px;padding:40px;width:480px;max-width:94vw}
+.logo{width:48px;height:48px;background:#2563eb;border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:22px;font-weight:700;color:white}
+h1{color:white;font-size:20px;font-weight:600;text-align:center;margin-bottom:4px}
+.step-indicator{color:rgba(255,255,255,.35);font-size:12px;text-align:center;margin-bottom:20px}
+p.desc{color:rgba(255,255,255,.5);font-size:13px;text-align:center;margin-bottom:20px;line-height:1.5}
+label{color:rgba(255,255,255,.65);font-size:13px;display:block;margin-bottom:4px;margin-top:12px}
+.input{width:100%;padding:10px 14px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:8px;color:white;font-size:14px;outline:none;transition:all .2s;box-sizing:border-box}
+.input:focus{border-color:#2563eb;background:rgba(255,255,255,.15)}
+.input::placeholder{color:rgba(255,255,255,.3)}
+.btn{width:100%;padding:11px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;border:none;transition:all .2s;margin-top:16px}
+.btn-primary{background:#2563eb;color:white}
+.btn-primary:hover{background:#1d4ed8}
+.btn-primary:disabled{opacity:.5;cursor:not-allowed}
+.btn-secondary{background:transparent;color:rgba(255,255,255,.4);font-size:12px;margin-top:6px}
+.btn-secondary:hover{color:rgba(255,255,255,.6)}
+.error{color:#fca5a5;font-size:12px;margin-top:8px;text-align:center;display:none}
+.success{color:#4ade80;font-size:12px;margin-top:8px;text-align:center;display:none}
+.step{display:none}.step.active{display:block}
+.folder-hint{color:rgba(255,255,255,.3);font-size:11px;margin-top:4px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:white;border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle;margin-right:6px}
+</style>
+</head>
+<body>
+<div class="card">
+<div class="logo">W</div>
+<h1>安装向导</h1>
+<div class="step-indicator" id="step-indicator">第 1 步 / 共 4 步</div>
+
+<!-- Step 1: Password -->
+<div class="step active" id="step-1">
+<p class="desc">设置看板访问密码，保护聊天记录安全</p>
+<label>登录密码</label>
+<input type="password" class="input" id="pw1" placeholder="至少 4 位" onkeydown="if(event.key==='Enter')goStep2()">
+<label>确认密码</label>
+<input type="password" class="input" id="pw2" placeholder="再次输入" onkeydown="if(event.key==='Enter')goStep2()">
+<div class="error" id="err1"></div>
+<button class="btn btn-primary" id="btn1" onclick="goStep2()">下一步</button>
+</div>
+
+<!-- Step 2: WeFlow API -->
+<div class="step" id="step-2">
+<p class="desc">配置 WeFlow 连接信息，请确保 WeFlow 已运行且 HTTP API 已开启</p>
+<label>API 地址</label>
+<input class="input" id="api-url" value="http://127.0.0.1:5031" onkeydown="if(event.key==='Enter')goStep3(true)">
+<label>Access Token</label>
+<input class="input" id="api-token" placeholder="从 WeFlow 设置中复制" onkeydown="if(event.key==='Enter')goStep3(true)">
+<div class="error" id="err2"></div>
+<div class="flex gap-2">
+<button class="btn btn-secondary" onclick="showStep(1)">← 上一步</button>
+<button class="btn btn-primary" id="btn2" onclick="goStep3(true)">测试连接</button>
+<button class="btn btn-secondary" onclick="goStep3(false)">跳过测试，下一步</button>
+</div>
+</div>
+
+<!-- Step 3: Data Directory -->
+<div class="step" id="step-3">
+<p class="desc">选择聊天记录导出文件的存放目录</p>
+<label>数据目录</label>
+<div class="flex gap-2"><input class="input flex-1" id="data-dir" placeholder="例如: ./data 或 D:/WeFlowData">
+<button class="btn btn-secondary flex-shrink-0" onclick="browseDataDir()" style="white-space:nowrap;padding:10px 16px;margin-top:0">📂 浏览...</button></div>
+<div class="folder-hint">留空默认为安装目录下的 data/ 子目录</div>
+<div class="error" id="err3"></div>
+<div class="flex gap-2">
+<button class="btn btn-secondary" onclick="showStep(2)">← 上一步</button>
+<button class="btn btn-primary" id="btn3" onclick="goStep4()">下一步</button>
+<button class="btn btn-secondary" onclick="document.getElementById('data-dir').value='';goStep4()">使用默认目录</button>
+</div>
+</div>
+
+<!-- Step 4: Finish -->
+<div class="step" id="step-4">
+<p class="desc">配置完成！点击下方按钮进入看板</p>
+<div id="config-summary" style="background:rgba(255,255,255,.05);border-radius:8px;padding:12px;margin-bottom:12px;font-size:12px;color:rgba(255,255,255,.6);line-height:1.8">
+  <div>📡 API: <span id="s-api">-</span></div>
+  <div>📂 数据目录: <span id="s-dir">-</span></div>
+</div>
+<div class="success" id="suc4"></div>
+<div class="error" id="err4"></div>
+<div class="flex gap-2">
+<button class="btn btn-secondary" onclick="showStep(3)">← 上一步</button>
+<button class="btn btn-primary" id="btn4" onclick="finishSetup()">🚀 进入看板</button>
+<button class="btn btn-secondary" onclick="location.href='/login'">回到首页</button>
+</div>
+</div>
+</div>
+
+<script>
+var configData = {password:'', api_url:'', api_token:'', data_dir:''};
+
+function showStep(n){for(var i=1;i<=4;i++){document.getElementById('step-'+i).classList.toggle('active',i===n)}document.getElementById('step-indicator').textContent='第 '+n+' 步 / 共 4 步'}
+function hideErr(id){document.getElementById(id).style.display='none'}
+function showErr(id,msg){var e=document.getElementById(id);e.textContent=msg;e.style.display='block'}
+function goStep2(){
+  hideErr('err1');
+  // 如果密码已设置过（从后面步骤回退），直接跳过
+  var p1=document.getElementById('pw1').value,p2=document.getElementById('pw2').value;
+  if(!p1){
+    fetch('/api/auth/status').then(function(r){return r.json()}).then(function(s){
+      if(s.has_password){showStep(2)}
+      else{showErr('err1','请设置密码')}
+    }).catch(function(){showErr('err1','请设置密码')});
+    return;
+  }
+  if(p1.length<4){showErr('err1','密码至少4位');return}
+  if(p1!==p2){showErr('err1','两次密码不一致');return}
+  configData.password=p1;
+  document.getElementById('btn1').disabled=true;document.getElementById('btn1').innerHTML='<span class="spinner"></span> 保存中...';
+  fetch('/api/auth/setup-first',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:p1})})
+  .then(function(r){return r.json()})
+  .then(function(d){
+    document.getElementById('btn1').disabled=false;document.getElementById('btn1').innerHTML='下一步';
+    if(d.success){
+      document.cookie='session='+d.token+';path=/;max-age=3600';
+      showStep(2);
+    }
+    else{showErr('err1',d.message||'保存失败')}
+  })
+  .catch(function(e){document.getElementById('btn1').disabled=false;document.getElementById('btn1').innerHTML='下一步';showErr('err1','连接失败:'+e.message)});
+}
+function goStep3(testConn){
+  hideErr('err2');
+  var url=document.getElementById('api-url').value.trim(),token=document.getElementById('api-token').value.trim();
+  if(!url){showErr('err2','请输入 API 地址');return}
+  configData.api_url=url;configData.api_token=token;
+  document.getElementById('btn2').disabled=true;document.getElementById('btn2').innerHTML='<span class="spinner"></span> 保存中...';
+  // Save to config first
+  fetch('/api/config',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(document.cookie.match(/session=([^;]+)/)||['',''])[1]},body:JSON.stringify({api_base_url:url,access_token:token})})
+  .then(function(r){return r.json()})
+  .then(function(d){
+    document.getElementById('btn2').disabled=false;document.getElementById('btn2').innerHTML='测试连接';
+    if(!d.success&&d.error!=='undefined'){console.warn('save warn');}
+    if(testConn){
+      // Test connection
+      document.getElementById('btn2').disabled=true;document.getElementById('btn2').innerHTML='<span class="spinner"></span> 测试中...';
+      return fetch('/api/weflow/ping',{method:'GET',headers:{'Authorization':'Bearer '+(document.cookie.match(/session=([^;]+)/)||['',''])[1]}}).then(function(r){return r.json()});
+    }
+    showStep(3);return null;
+  })
+  .then(function(ping){
+    if(ping===null)return;
+    document.getElementById('btn2').disabled=false;document.getElementById('btn2').innerHTML='测试连接';
+    if(ping.success){showStep(3)}
+    else{showErr('err2','连接失败: '+(ping.message||'无法连接 WeFlow，请检查地址和 Token'))}
+  })
+  .catch(function(e){document.getElementById('btn2').disabled=false;document.getElementById('btn2').innerHTML='测试连接';showErr('err2','错误:'+e.message)});
+}
+function browseDataDir(){
+  var btn=event&&event.target||document.getElementById('data-dir');
+  btn.disabled=true;
+  fetch('/api/select-directory',{method:'POST'})
+  .then(function(r){return r.json()})
+  .then(function(d){
+    btn.disabled=false;
+    if(d.success&&d.path){document.getElementById('data-dir').value=d.path}
+    else if(d.error){showErr('err3','无法打开目录选择器: '+d.error)}
+  })
+  .catch(function(e){btn.disabled=false;showErr('err3','错误:'+e.message)});
+}
+function goStep4(){
+  hideErr('err3');
+  var dir=document.getElementById('data-dir').value.trim();
+  configData.data_dir=dir||'data';
+  document.getElementById('s-api').textContent=configData.api_url;
+  document.getElementById('s-dir').textContent=configData.data_dir;
+  // Save data_dir to config
+  document.getElementById('btn3').disabled=true;document.getElementById('btn3').innerHTML='<span class="spinner"></span> 保存中...';
+  fetch('/api/config',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(document.cookie.match(/session=([^;]+)/)||['',''])[1]},body:JSON.stringify({data_dir:configData.data_dir})})
+  .then(function(r){return r.json()})
+  .then(function(d){
+    document.getElementById('btn3').disabled=false;document.getElementById('btn3').innerHTML='下一步';
+    showStep(4);
+  })
+  .catch(function(e){document.getElementById('btn3').disabled=false;document.getElementById('btn3').innerHTML='下一步';showErr('err3','保存失败:'+e.message)});
+}
+function finishSetup(){
+  var btn=document.getElementById('btn4');btn.disabled=true;btn.innerHTML='<span class="spinner"></span> 进入中...';
+  hideErr('err4');
+  window.location.href='/';
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WeFlow 看板 · 首次设置</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; }
+body { background:linear-gradient(135deg,#1e3a5f,#0d2137); min-height:100vh; display:flex; align-items:center; justify-content:center; }
+.card { background:rgba(255,255,255,.08); backdrop-filter:blur(20px); border:1px solid rgba(255,255,255,.12); border-radius:24px; padding:48px; width:400px; }
+.logo { width:56px; height:56px; background:#2563eb; border-radius:16px; display:flex; align-items:center; justify-content:center; margin:0 auto 20px; font-size:24px; font-weight:700; color:white; }
+h1 { color:white; font-size:22px; font-weight:600; text-align:center; margin-bottom:6px; }
+p { color:rgba(255,255,255,.5); font-size:13px; text-align:center; margin-bottom:24px; }
+.input { width:100%; padding:12px 16px; background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.2); border-radius:10px; color:white; font-size:15px; outline:none; transition:all .2s; box-sizing:border-box; }
+.input:focus { border-color:#2563eb; background:rgba(255,255,255,.15); }
+.input::placeholder { color:rgba(255,255,255,.35); }
+.btn { width:100%; padding:13px; border-radius:10px; font-size:15px; font-weight:600; cursor:pointer; border:none; transition:all .2s; margin-top:12px; }
+.btn-primary { background:#2563eb; color:white; }
+.btn-primary:hover { background:#1d4ed8; }
+.btn-primary:disabled { opacity:.5; cursor:not-allowed; }
+.btn-skip { background:transparent; color:rgba(255,255,255,.4); margin-top:8px; font-size:13px; border:none; cursor:pointer; width:100%; }
+.btn-skip:hover { color:rgba(255,255,255,.7); }
+.error { color:#fca5a5; font-size:13px; margin-top:10px; text-align:center; display:none; }
+.success { color:#4ade80; font-size:13px; margin-top:10px; text-align:center; display:none; }
+@keyframes spin { to{transform:rotate(360deg);} }
+.spinner { display:inline-block; width:16px; height:16px; border:2px solid rgba(255,255,255,.3); border-top-color:white; border-radius:50%; animation:spin .6s linear infinite; vertical-align:middle; margin-right:6px; }
+</style>
+</head>
+<body>
+<div class="card">
+<div class="logo">W</div>
+<h1>首次设置</h1>
+<p>请设置看板访问密码</p>
+<input type="password" class="input" id="pw1" placeholder="输入密码（至少4位）" onkeydown="if(event.key==='Enter')doSetup()" autofocus style="margin-bottom:10px">
+<input type="password" class="input" id="pw2" placeholder="再次输入密码" onkeydown="if(event.key==='Enter')doSetup()">
+<button class="btn btn-primary" id="btn-setup" onclick="doSetup()">设置密码并进入</button>
+<button class="btn-skip" id="btn-skip" onclick="doSkip()">跳过，稍后设置</button>
+<div class="error" id="setup-error"></div>
+<div class="success" id="setup-success"></div>
+</div>
+<script>
+async function doSetup() {
+  const pw1=document.getElementById('pw1').value, pw2=document.getElementById('pw2').value;
+  const err=document.getElementById('setup-error'), btn=document.getElementById('btn-setup');
+  if(!pw1||pw1.length<4){err.textContent='密码至少4位';err.style.display='block';return;}
+  if(pw1!==pw2){err.textContent='两次密码不一致';err.style.display='block';return;}
+  btn.disabled=true;btn.innerHTML='<span class="spinner"></span> 设置中...';err.style.display='none';
+  try{
+    const r=await fetch('/api/auth/setup-first',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:pw1})});
+    const d=await r.json();
+    if(d.success&&d.token){
+      document.getElementById('setup-success').textContent='密码设置成功！正在跳转...';
+      document.getElementById('setup-success').style.display='block';
+      document.cookie='session='+d.token+';path=/;max-age=3600';
+      window.location.replace('/');
+    }else{err.textContent=d.message||'设置失败';err.style.display='block';btn.disabled=false;btn.innerHTML='设置密码并进入';}
+  }catch(e){err.textContent='连接失败:'+e.message;err.style.display='block';btn.disabled=false;btn.innerHTML='设置密码并进入';}
+}
+async function doSkip(){
+  const s=document.getElementById('setup-success');
+  s.textContent='跳过设置，首次进入后将要求设置密码';s.style.display='block';
+  document.getElementById('btn-skip').disabled=true;
+  try{
+    const r=await fetch('/api/auth/setup-first',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:'',skip:true})});
+    const d=await r.json();
+    if(d.success&&d.token){
+      document.cookie='session='+d.token+';path=/;max-age=3600';
+      window.location.replace('/?forceChangePw=1');
+    }else{s.textContent='跳过失败';}
+  }catch(e){s.textContent='连接失败';}
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+build/
+dist_*/
+*.spec
+config.json
+checkpoint.json
+data/
+reports/
+error.log
+.DS_Store
