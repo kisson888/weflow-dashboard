@@ -2,6 +2,7 @@ __pycache__/
 *.pyc
 build*/
 dist_v*/
+WeFlowDashboard_v2.*/
 config.json
 checkpoint.json
 data/
