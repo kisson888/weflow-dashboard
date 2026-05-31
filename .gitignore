@@ -2,7 +2,6 @@ __pycache__/
 *.pyc
 build*/
 dist_v*/
-*.spec
 config.json
 checkpoint.json
 data/
