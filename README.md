@@ -1,146 +1,77 @@
-# WeFlow Monitor - 微信聊天记录导出与监控看板
+# WeFlow Dashboard
 
-纯 Python 3 标准库，**零外部依赖**。  
-也可下载**打包版 exe**（无需安装 Python）。  
-利用 WeFlow 桌面端的 HTTP API 定时增量导出微信聊天记录，并提供 Web 看板管理。
+**External v2.0 / Internal v33** — Web 端 WeFlow 聊天记录管理看板
 
-## 下载打包版（推荐）
-
-从 [Releases](https://github.com/kisson888/to-do/releases) 下载 `WeFlowDashboard.zip`，解压后：
-
-```
-WeFlowDashboard/
-├── 启动看板.bat    ← 双击启动
-├── WeFlowDashboard.exe
-├── config.example.json
-├── dashboard.html
-├── weflow_monitor.py
-├── chat_html.py
-└── _internal/
-```
-
-> **不需要安装 Python**，解压即用。  
-> 首次运行请按提示设置密码并配置 WeFlow API Token。
+基于 WeFlow HTTP API 的微信聊天记录管理与可视化工具，支持全量/增量/区间导出、自动日报、HTML 聊天记录浏览。
 
 ## 功能
 
-- 多会话微信聊天记录自动定时导出
-- Web 看板：会话管理、手动导出、日报浏览、数据预览、HTML 聊天记录
-- 发送者名称智能解析（备注 > 群昵称 > 微信昵称）
-- 全量/增量/日期区间 三种导出模式
-- 密码登录保护
+- **总览** — 会话监控状态一览，消息数、同步情况
+- **会话管理** — 添加候选、启用/禁用监控、备份计划（每天/每周/每月）、快捷导出清空
+- **手动执行** — 选择会话执行全量/增量/区间导出，查看执行日志
+- **日报浏览** — 自动生成的每日聊天摘要，含导出操作记录
+- **数据浏览** — 浏览已导出的 JSON 聊天记录
+- **HTML 聊天** — 格式化聊天记录浏览（日期分割线、发送者名称）
+- **设置** — WeFlow 连接配置、密码修改、版本信息
 
-## 安装与使用
+## 快速开始
 
-### 前置条件
+1. 确保 WeFlow 桌面端已运行且 HTTP API 已开启（默认端口 5031）
+2. 双击 `启动看板.bat`（有控制台窗口）或 `start.vbs`（静默启动）
+3. 首次运行自动进入安装向导，设置密码 → API 地址 → 数据目录
+4. 浏览器访问 http://127.0.0.1:8765
 
-1. **Python 3.8+**（推荐 3.10+）
-2. **WeFlow 桌面端 v4.5.1 稳定版** (https://github.com/hicccc77/WeFlow) — 已安装并运行，HTTP API 服务已开启（默认端口 5031）
+## 技术架构
 
-### 快速开始
-
-```bash
-# 1. 克隆项目
-git clone <your-repo-url> weflow-monitor
-cd weflow-monitor
-
-# 2. 一键安装（创建目录、生成 config.json）
-python setup.py
-
-# 3. 编辑配置填入 WeFlow API Token
-#    Windows: notepad config.json
-#    Linux/Mac: vim config.json
-
-# 4. 设置看板登录密码
-python dashboard_server.py --set-password <你的密码>
-
-# 5. 启动看板
-python dashboard_server.py
-```
-
-或使用安装脚本 `setup.py` 一键完成目录创建和配置生成。
-
-首次启动会提示设置密码：
-```bash
-python dashboard_server.py --set-password <你的密码>
-```
-
-打开浏览器访问 http://127.0.0.1:8765
-
-### 启动方式
-
-| 方式 | 命令 | 说明 |
-|------|------|------|
-| 命令行 | `python dashboard_server.py` | 前台运行，有控制台窗口 |
-| 静默启动 | `start_dashboard.vbs` (Windows) | 双击运行，无窗口 |
-| 批量启动 | `start_dashboard.bat` (Windows) | 双击运行，短暂显示窗口 |
-
-### 配置说明
-
-编辑 `config.json`：
-
-| 字段 | 说明 | 默认值 |
-|------|------|--------|
-| `api_base_url` | WeFlow API 地址 | `http://127.0.0.1:5031` |
-| `access_token` | WeFlow API 认证令牌 | 从 WeFlow 设置获取 |
-| `data_dir` | JSON/HTML 数据存储目录 | `data`（相对路径） |
-| `report_dir` | 日报存储目录 | `reports`（相对路径） |
-| `auth.enabled` | 是否启用密码认证 | `true` |
-
-### 自行打包（高级）
-
-如果你有 Python 环境，也可以自己打包成 exe：
-
-```bash
-# 1. 安装 PyInstaller
-pip install pyinstaller
-
-# 2. 打包
-cd weflow-monitor
-pyinstaller --onedir --name WeFlowDashboard \
-  --add-data "dashboard.html;." \
-  --add-data "config.example.json;." \
-  --add-data "start_dashboard.bat;." \
-  --add-data "weflow_monitor.py;." \
-  --add-data "chat_html.py;." \
-  --hidden-import weflow_monitor \
-  --hidden-import chat_html \
-  --console \
-  dashboard_server.py
-
-# 3. 输出在 dist/WeFlowDashboard/
-```
+- **后端**: Python 3 标准库（零外部依赖）
+- **前端**: 原生 HTML + Tailwind CSS (CDN)
+- **打包**: PyInstaller 打包为独立 exe
+- **数据**: JSON 文件存储，checkpoint 增量同步
 
 ## 项目结构
 
 ```
-weflow-monitor/
-├── dashboard_server.py      # Web 看板后端 (HTTP server, 端口 8765)
-├── dashboard.html           # 前端看板页面
-├── weflow_monitor.py        # 核心导出引擎
-├── chat_html.py             # HTML 聊天记录生成器
-├── config.json              # 配置文件（本地，不提交）
+weflow-dashboard/
+├── dashboard_server.py      # HTTP 服务端（入口）
+├── weflow_monitor.py        # 导出引擎
+├── dashboard.html           # 前端页面
+├── setup_wizard.html        # 安装向导
+├── chat_html.py             # HTML 聊天记录生成
+├── verify_hello.py          # Windows Hello 验证
 ├── config.example.json      # 配置模板
-├── start_dashboard.bat      # Windows 启动脚本
-├── start_dashboard.vbs      # Windows 静默启动
-├── data/                    # 聊天记录数据（运行时生成）
-├── reports/                 # 日报文件（运行时生成）
-└── README.md
+├── 启动看板.bat              # 启动脚本（控制台）
+├── start.vbs                # 启动脚本（静默）
+├── 停止服务.bat              # 停止脚本
+├── 使用说明.txt              # 使用说明
+└── dist_v34/                # 最新打包输出
+    └── WeFlowDashboard/
+        ├── WeFlowDashboard.exe
+        ├── 启动看板.bat
+        ├── start.vbs
+        ├── 停止服务.bat
+        └── 使用说明.txt
 ```
 
-## API 端点
+## 版本说明
 
-| 端点 | 说明 |
+| 版本 | 说明 |
 |------|------|
-| `GET /api/status` | 系统状态（会话、在线状态、统计数据） |
-| `GET /api/sessions/weflow` | 从 WeFlow 获取全量会话列表 |
-| `POST /api/run` | 自动定时增量导出 |
-| `POST /api/run/full` | 全量导出（选中会话） |
-| `POST /api/run/manual-incr` | 手动增量导出（不影响自动 checkpoint） |
-| `POST /api/run-range` | 指定日期区间导出 |
-| `POST /api/run/quick` | 单个会话快捷导出（全量/增量） |
-| `GET /api/data/<session>` | 获取会话的导出文件列表 |
-| `GET /api/data-html/<session>/<file>` | 获取 HTML 聊天文件内容 |
+| 外部版本 v2.0 | 面向用户，大版本迭代时递增 |
+| 内部版本 v33 | 每次构建自动递增，测试对比和问题定位 |
+
+## ⚠️ 免责声明
+
+**WeFlow Dashboard**（下称"本软件"）是一个纯后端可视化工具，**本身不收集、不存储、不传输任何聊天数据**。
+
+1. **数据来源**：本软件展示的所有聊天记录均来源于 [WeFlow](https://github.com/hicccc77/WeFlow) 的 HTTP API 推送。聊天数据的准确性、完整性和时效性由 WeFlow 及微信客户端决定。
+
+2. **责任归属**：任何因聊天记录引发的隐私、法律或合规问题，责任由 **WeFlow 的使用者** 承担。本软件仅作为数据展示和管理的后端工具，不承担数据来源相关责任。
+
+3. **使用前提**：建议使用者在使用前确保已获得相关会话成员的知情同意。使用者应自行评估并遵守所在司法管辖区的相关法律法规。
+
+4. **无担保**：本软件按"现状"提供，不提供任何明示或暗示的担保，包括但不限于适销性、特定用途适用性和非侵权性。
+
+5. **使用限制**：不得将本软件用于任何非法目的或侵犯他人合法权益的行为。
 
 ## 许可证
 
