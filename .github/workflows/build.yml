@@ -1,0 +1,56 @@
+name: Build & Release
+
+on:
+  push:
+    branches: [master]
+  release:
+    types: [published]
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install PyInstaller
+        run: pip install pyinstaller
+
+      - name: Build with PyInstaller
+        run: pyinstaller --clean --distpath dist WeFlowDashboard.spec
+
+      - name: Prepare distribution
+        shell: pwsh
+        run: |
+          $dist = "dist/WeFlowDashboard"
+          # Copy helper scripts
+          Copy-Item "启动看板.bat" "$dist/"
+          Copy-Item "start.vbs" "$dist/"
+          Copy-Item "停止服务.bat" "$dist/"
+          Copy-Item "使用说明.txt" "$dist/"
+          # Pre-create config.json
+          Get-Content "config.example.json" | Set-Content "$dist/config.json"
+          # Zip the package
+          Compress-Archive -Path "$dist/*" -DestinationPath "WeFlowDashboard.zip"
+
+      - name: Upload artifact (push)
+        uses: actions/upload-artifact@v4
+        with:
+          name: WeFlowDashboard
+          path: dist/WeFlowDashboard/
+
+      - name: Upload to Release
+        if: github.event_name == 'release'
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ./WeFlowDashboard.zip
+          asset_name: WeFlowDashboard_v2.0.zip
+          asset_content_type: application/zip
