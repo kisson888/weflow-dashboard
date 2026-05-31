@@ -1,7 +1,7 @@
 __pycache__/
 *.pyc
-build/
-dist_*/
+build*/
+dist_v*/
 *.spec
 config.json
 checkpoint.json
@@ -9,3 +9,13 @@ data/
 reports/
 error.log
 .DS_Store
+.workbuddy/
+overview.md
+dashboard_overview.md
+CODE_REVIEW.md
+hello_auth.cs
+setup.html
+setup.py
+start_dashboard.bat
+start_dashboard.vbs
+verify_hello.ps1
